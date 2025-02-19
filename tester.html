@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Detection API Tester</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --dark: #3a0ca3;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --gray: #f8f9fa;
+            --light-gray: #e9ecef;
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--gray);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .content {
+            display: flex;
+            min-height: 80vh;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: var(--dark);
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        input, select, button {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: var(--primary-light);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .button-secondary {
+            background: var(--gray);
+            color: #333;
+        }
+        
+        .button-secondary:hover {
+            background: var(--light-gray);
+        }
+        
+        .button-danger {
+            background: var(--danger);
+        }
+        
+        .button-danger:hover {
+            background: #e5195c;
+        }
+        
+        .button-small {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .status.success {
+            background: rgba(76, 201, 240, 0.2);
+            border: 1px solid var(--success);
+            color: #0b8bb3;
+        }
+        
+        .status.error {
+            background: rgba(247, 37, 133, 0.1);
+            border: 1px solid var(--danger);
+            color: #ba145e;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row > * {
+            flex: 1;
+        }
+        
+        .preview {
+            max-width: 100%;
+            height: auto;
+            max-height: 200px;
+            display: block;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .result-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .result-area:empty:before {
+            content: "Results will appear here...";
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .session-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .session-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .session-item:hover {
+            background: var(--light-gray);
+        }
+        
+        .session-item.active {
+            background: rgba(67, 97, 238, 0.1);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .session-info {
+            flex: 1;
+        }
+        
+        .session-id {
+            font-size: 12px;
+            font-family: monospace;
+            color: #666;
+            display: block;
+            width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .session-date {
+            font-size: 11px;
+            color: #777;
+            margin-top: 3px;
+        }
+        
+        .session-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #eee;
+        }
+        
+        .session-badge.active {
+            background: rgba(76, 201, 240, 0.2);
+            color: #0b8bb3;
+        }
+        
+        .session-badge.completed {
+            background: rgba(58, 12, 163, 0.1);
+            color: var(--dark);
+        }
+        
+        .emotion-distribution {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .emotion-item {
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            padding: 15px 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .emotion-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .emotion-count {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background: #4cc9f0;
+        }
+        
+        .status-disconnected {
+            background: #f72585;
+        }
+        
+        .frames-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .frame-item {
+            width: 100px;
+            text-align: center;
+        }
+        
+        .frame-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .frame-emotion {
+            margin-top: 5px;
+            font-size: 12px;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 5px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .webcam-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        
+        #webcam {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .webcam-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .webcam-button {
+            flex: 1;
+            max-width: 150px;
+        }
+        
+        .capture-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: red;
+            display: none;
+        }
+        
+        .capture-status.active {
+            display: block;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+        
+        .summary-text {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #dee2e6;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Emotion Detection API Tester</h1>
+        </header>
+        
+        <div class="content">
+            <div class="sidebar">
+                <div class="status-indicator">
+                    <div id="api-status-dot" class="status-dot status-disconnected"></div>
+                    <span id="api-status-text">Checking API status...</span>
+                </div>
+                
+                <button id="refresh-sessions-btn" class="button-secondary" style="margin-bottom: 15px;">
+                    Refresh Sessions
+                </button>
+                
+                <div id="sessions-container">
+                    <ul id="session-list" class="session-list">
+                        <!-- Sessions will be listed here -->
+                        <li class="session-item">Loading sessions...</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button id="create-session-btn" class="button-primary">Create New Session</button>
+                </div>
+            </div>
+            
+            <div class="main">
+                <div id="status-message" class="status"></div>
+                
+                <div class="panel">
+                    <div class="tab-container">
+                        <div class="tab active" data-tab="upload">Upload Images</div>
+                        <div class="tab" data-tab="webcam">Webcam Capture</div>
+                        <div class="tab" data-tab="results">Session Results</div>
+                    </div>
+                    
+                    <div id="upload-tab" class="tab-content active">
+                        <div id="no-session-warning" style="display: none;">
+                            <div class="status error">
+                                No active session. Please create a new session to upload images.
+                            </div>
+                            <button id="create-session-from-warning" class="button-primary">Create New Session</button>
+                        </div>
+                        
+                        <div id="upload-content" style="display: none;">
+                            <h2>Upload Image Frame</h2>
+                            <div class="form-group">
+                                <label>Current Session:</label>
+                                <div style="display: flex; align-items: center;">
+                                    <input id="current-session-id" type="text" readonly>
+                                    <button id="copy-session-id" class="button-secondary button-small">Copy</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="image-upload">Select Image:</label>
+                                <input type="file" id="image-upload" accept="image/*">
+                                <img id="image-preview" class="preview" style="display: none;">
+                            </div>
+                            
+                            <div class="form-row">
+                                <button id="upload-image-btn" disabled>Upload Image</button>
+                                <button id="end-session-btn" class="button-secondary">End Session</button>
+                            </div>
+                            
+                            <div class="frames-container" id="uploaded-frames">
+                                <!-- Uploaded frames will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="webcam-tab" class="tab-content">
+                        <div id="webcam-no-session-warning" style="display: none;">
+                            <div class="status error">
+                                No active session. Please create a new session to use webcam capture.
+                            </div>
+                            <button id="create-session-from-webcam" class="button-primary">Create New Session</button>
+                        </div>
+                        
+                        <div id="webcam-content" style="display: none;">
+                            <h2>Webcam Emotion Capture</h2>
+                            <div class="webcam-container">
+                                <video id="webcam" autoplay playsinline></video>
+                                <div id="recording-indicator" class="capture-status"></div>
+                            </div>
+                            
+                            <div class="webcam-controls">
+                                <button id="start-webcam-btn" class="webcam-button">Start Camera</button>
+                                <button id="capture-btn" class="webcam-button" disabled>Capture Frame</button>
+                                <button id="auto-capture-btn" class="webcam-button" disabled>Auto Capture</button>
+                                <button id="stop-capture-btn" class="webcam-button button-danger" disabled>Stop Capture</button>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <label>Capture Interval (seconds):</label>
+                                <input type="range" id="capture-interval" min="1" max="10" value="3" style="width: 100%;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>1s</span>
+                                    <span id="interval-value">3s</span>
+                                    <span>10s</span>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <label>Last Detected Emotion:</label>
+                                <div id="last-emotion" style="
+                                    font-size: 24px;
+                                    font-weight: bold;
+                                    text-align: center;
+                                    margin: 15px 0;
+                                    padding: 15px;
+                                    background: rgba(67, 97, 238, 0.1);
+                                    border-radius: 6px;
+                                ">
+                                    Waiting for capture...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="results-tab" class="tab-content">
+                        <h2>Session Results</h2>
+                        
+                        <div id="no-results-message" style="display: none;">
+                            <div class="status">
+                                No session selected or no results available.
+                            </div>
+                        </div>
+                        
+                        <div id="results-content" style="display: none;">
+                            <div class="form-row">
+                                <button id="refresh-results-btn">Refresh Results</button>
+                                <button id="clear-session-btn" class="button-danger">Delete Session</button>
+                            </div>
+                            
+                            <div id="session-summary" style="margin-top: 20px;">
+                                <!-- Session summary will appear here -->
+                            </div>
+                            
+                            <h3>Emotion Distribution</h3>
+                            <div id="emotion-distribution" class="emotion-distribution">
+                                <!-- Emotion distribution will appear here -->
+                            </div>
+                            
+                            <h3>Raw Results</h3>
+                            <pre id="result-json" class="result-area"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:5110';
+        const EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'];
+        const EMOTION_COLORS = {
+            'Angry': '#f72585',
+            'Disgust': '#7209b7',
+            'Fear': '#3a0ca3',
+            'Happy': '#4cc9f0',
+            'Sad': '#4361ee',
+            'Surprise': '#f8961e',
+            'Neutral': '#adb5bd'
+        };
+        
+        // State management
+        let currentSessionId = null;
+        let isAutoCaptureActive = false;
+        let captureInterval = null;
+        let stream = null;
+        let uploadedFrames = [];
+        
+        // Elements
+        const apiStatusDot = document.getElementById('api-status-dot');
+        const apiStatusText = document.getElementById('api-status-text');
+        const sessionList = document.getElementById('session-list');
+        const createSessionBtn = document.getElementById('create-session-btn');
+        const refreshSessionsBtn = document.getElementById('refresh-sessions-btn');
+        const currentSessionIdInput = document.getElementById('current-session-id');
+        const copySessionIdBtn = document.getElementById('copy-session-id');
+        const statusMessage = document.getElementById('status-message');
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        const uploadImageBtn = document.getElementById('upload-image-btn');
+        const endSessionBtn = document.getElementById('end-session-btn');
+        const refreshResultsBtn = document.getElementById('refresh-results-btn');
+        const clearSessionBtn = document.getElementById('clear-session-btn');
+        const resultJson = document.getElementById('result-json');
+        const sessionSummary = document.getElementById('session-summary');
+        const emotionDistribution = document.getElementById('emotion-distribution');
+        const uploadedFramesContainer = document.getElementById('uploaded-frames');
+        const noSessionWarning = document.getElementById('no-session-warning');
+        const uploadContent = document.getElementById('upload-content');
+        const webcamNoSessionWarning = document.getElementById('webcam-no-session-warning');
+        const webcamContent = document.getElementById('webcam-content');
+        const createSessionFromWarning = document.getElementById('create-session-from-warning');
+        const createSessionFromWebcam = document.getElementById('create-session-from-webcam');
+        const webcamVideo = document.getElementById('webcam');
+        const startWebcamBtn = document.getElementById('start-webcam-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const autoCaptureBtn = document.getElementById('auto-capture-btn');
+        const stopCaptureBtn = document.getElementById('stop-capture-btn');
+        const recordingIndicator = document.getElementById('recording-indicator');
+        const captureIntervalSlider = document.getElementById('capture-interval');
+        const intervalValue = document.getElementById('interval-value');
+        const lastEmotion = document.getElementById('last-emotion');
+        const noResultsMessage = document.getElementById('no-results-message');
+        const resultsContent = document.getElementById('results-content');
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                
+                updateTabContent();
+            });
+        });
+        
+        // Check API connection
+        async function checkApiConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    apiStatusDot.classList.remove('status-disconnected');
+                    apiStatusDot.classList.add('status-connected');
+                    apiStatusText.textContent = 'API Connected';
+                    return true;
+                } else {
+                    throw new Error('API not healthy');
+                }
+            } catch (error) {
+                apiStatusDot.classList.remove('status-connected');
+                apiStatusDot.classList.add('status-disconnected');
+                apiStatusText.textContent = 'API Disconnected';
+                showStatus('Could not connect to API. Please check if the server is running.', 'error');
+                return false;
+            }
+        }
+        
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_all_sessions`);
+                const data = await response.json();
+                
+                sessionList.innerHTML = '';
+                
+                if (!data.sessions || data.sessions.length === 0) {
+                    sessionList.innerHTML = '<li class="session-item">No sessions found</li>';
+                    return;
+                }
+                
+                data.sessions.forEach(session => {
+                    const sessionItem = document.createElement('li');
+                    sessionItem.className = 'session-item';
+                    if (session.session_id === currentSessionId) {
+                        sessionItem.classList.add('active');
+                    }
+                    
+                    const sessionDate = new Date(session.start_time);
+                    const formattedDate = sessionDate.toLocaleDateString() + ' ' + 
+                                         sessionDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    sessionItem.innerHTML = `
+                        <div class="session-info">
+                            <span class="session-id">${session.session_id}</span>
+                            <span class="session-date">${formattedDate}</span>
+                        </div>
+                        <div>
+                            <span class="session-badge ${session.status}">${session.status}</span>
+                            <span>${session.total_images} frames</span>
+                        </div>
+                    `;
+                    
+                    sessionItem.addEventListener('click', () => {
+                        document.querySelectorAll('.session-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        sessionItem.classList.add('active');
+                        
+                        // Set as current if active, otherwise just view results
+                        if (session.status === 'active') {
+                            setCurrentSession(session.session_id);
+                        } else {
+                            currentSessionId = session.session_id;
+                            updateCurrentSession();
+                            
+                            // Switch to results tab
+                            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                            document.querySelector('.tab[data-tab="results"]').classList.add('active');
+                            document.getElementById('results-tab').classList.add('active');
+                            updateTabContent();
+                            loadSessionResults();
+                        }
+                    });
+                    
+                    sessionList.appendChild(sessionItem);
+                });
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showStatus('Failed to load sessions', 'error');
+            }
+        }
+        
+        // Create new session
+        async function createSession() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/start_session`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showStatus('New session created successfully', 'success');
+                    setCurrentSession(data.session_id);
+                    await loadSessions();
+                    uploadedFrames = [];
+                    updateUploadedFrames();
+                    return data.session_id;
+                } else {
+                    throw new Error(data.error || 'Failed to create session');
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+                showStatus(`Failed to create session: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // End current session
+        async function endSession() {
+            if (!currentSessionId) {
+                showStatus('No active session to end', 'error');
+                return false;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('session_id', currentSessionId);
+                
+                const response = await fetch(`${API_BASE_URL}/end_session`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showStatus('Session ended successfully', 'success');
+                    
+                    // Switch to results tab
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.querySelector('.tab[data-tab="results"]').classList.add('active');
+                    document.getElementById('results-tab').classList.add('active');
+                    
+                    await loadSessions();
+                    await loadSessionResults();
+                    currentSessionId = null;
+                    updateCurrentSession();
+                    updateTabContent();
+                    return true;
+                } else {
+                    throw new Error(data.error || 'Failed to end session');
+                }
+            } catch (error) {
+                console.error('Error ending session:', error);
+                showStatus(`Failed to end session: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Upload image frame
+        async function uploadFrame(file) {
+            if (!currentSessionId) {
+                showStatus('No active session. Please create a session first.', 'error');
+                return null;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('session_id', currentSessionId);
+                formData.append('image', file);
+                
+                uploadImageBtn.disabled = true;
+                uploadImageBtn.innerHTML = '<span class="loader"></span> Uploading...';
+                
+                const response = await fetch(`${API_BASE_URL}/upload_frame`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                uploadImageBtn.disabled = false;
+                uploadImageBtn.textContent = 'Upload Image';
+                
+                if (data.status === 'success') {
+                    showStatus('Frame uploaded successfully', 'success');
+                    
+                    // Add to uploaded frames
+                    uploadedFrames.push({
+                        src: URL.createObjectURL(file),
+                        emotion: data.frame_emotion,
+                        confidence: data.confidence || 0
+                    });
+                    
+                    updateUploadedFrames();
+                    return data;
+                } else {
+                    throw new Error(data.error || 'Failed to upload frame');
+                }
+            } catch (error) {
+                console.error('Error uploading frame:', error);
+                showStatus(`Failed to upload frame: ${error.message}`, 'error');
+                uploadImageBtn.disabled = false;
+                uploadImageBtn.textContent = 'Upload Image';
+                return null;
+            }
+        }
+        
+        // Update uploaded frames display
+        function updateUploadedFrames() {
+            uploadedFramesContainer.innerHTML = '';
+            
+            uploadedFrames.slice().reverse().forEach((frame, index) => {
+                if (index >= 10) return; // Only show last 10 frames
+                
+                const frameElement = document.createElement('div');
+                frameElement.className = 'frame-item';
+                frameElement.innerHTML = `
+                    <img src="${frame.src}" class="frame-image" alt="Uploaded frame">
+                    <div class="frame-emotion">${frame.emotion} ${frame.confidence ? `(${Math.round(frame.confidence * 100)}%)` : ''}</div>
+                `;
+                uploadedFramesContainer.appendChild(frameElement);
+            });
+        }
+        
+        // Load session results
+        async function loadSessionResults() {
+            if (!currentSessionId) {
+                noResultsMessage.style.display = 'block';
+                resultsContent.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_session_results?session_id=${currentSessionId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load results: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Display results
+                noResultsMessage.style.display = 'none';
+                resultsContent.style.display = 'block';
+                
+                // Format and display JSON
+                resultJson.textContent = JSON.stringify(data, null, 2);
+                
+                // Generate summary
+                generateSummary(data);
+                
+                // Generate emotion distribution
+                generateEmotionDistribution(data.emotion_distribution);
+                
+                return data;
+            } catch (error) {
+                console.error('Error loading session results:', error);
+                showStatus(`Failed to load session results: ${error.message}`, 'error');
+                noResultsMessage.style.display = 'block';
+                resultsContent.style.display = 'none';
+                return null;
+            }
+        }
+        
+        // Generate summary display
+        function generateSummary(data) {
+            if (!data || !data.session_summary) {
+                sessionSummary.innerHTML = '<div class="status">No summary data available</div>';
+                return;
+            }
+            
+            const summary = data.session_summary;
+            const status = data.session_status || 'unknown';
+            
+            sessionSummary.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-title">Session Overview</div>
+                    <div class="summary-text">
+                        <p><strong>Status:</strong> ${status}</p>
+                        <p><strong>Total Images:</strong> ${data.total_images}</p>
+                        <p><strong>Dominant Emotion:</strong> ${summary.most_common_emotion}</p>
+                        <p><strong>Variability:</strong> ${summary.emotion_variability}</p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-title">Analysis</div>
+                    <div class="summary-text">
+                        <p><strong>Overall Trend:</strong> ${summary.overall_trend}</p>
+                        <p><strong>Observations:</strong></p>
+                        <ul>
+                            ${summary.notable_observations.map(obs => `<li>${obs}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Generate emotion distribution display
+        function generateEmotionDistribution(distribution) {
+            if (!distribution) {
+                emotionDistribution.innerHTML = '<div class="status">No distribution data available</div>';
+                return;
+            }
+            
+            emotionDistribution.innerHTML = '';
+            
+            EMOTIONS.forEach(emotion => {
+                const count = distribution[emotion] || 0;
+                const emotionItem = document.createElement('div');
+                emotionItem.className = 'emotion-item';
+                emotionItem.style.borderLeft = `4px solid ${EMOTION_COLORS[emotion]}`;
+                
+                emotionItem.innerHTML = `
+                    <div class="emotion-name">${emotion}</div>
+                    <div class="emotion-count">${count}</div>
+                `;
+                
+                emotionDistribution.appendChild(emotionItem);
+            });
+        }
+        
+        // Clear/delete session
+        async function clearSession() {
+            if (!currentSessionId) {
+                showStatus('No session selected to delete', 'error');
+                return false;
+            }
+            
+            if (!confirm(`Are you sure you want to delete session ${currentSessionId}?`)) {
+                return false;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('session_id', currentSessionId);
+                
+                const response = await fetch(`${API_BASE_URL}/clear_session`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showStatus('Session deleted successfully', 'success');
+                    await loadSessions();
+                    currentSessionId = null;
+                    updateCurrentSession();
+                    updateTabContent();
+                    
+                    // Clear results
+                    noResultsMessage.style.display = 'block';
+                    resultsContent.style.display = 'none';
+                    
+                    return true;
+                } else {
+                    throw new Error(data.error || 'Failed to delete session');
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                showStatus(`Failed to delete session: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Set current session
+        function setCurrentSession(sessionId) {
+            currentSessionId = sessionId;
+            updateCurrentSession();
+            updateTabContent();
+        }
+        
+        // Update current session display
+        function updateCurrentSession() {
+            currentSessionIdInput.value = currentSessionId || '';
+            document.querySelectorAll('.session-item').forEach(item => {
+                const sessionId = item.querySelector('.session-id').textContent;
+                if (sessionId === currentSessionId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+        
+        // Update tab content based on session state
+        function updateTabContent() {
+            const activeTab = document.querySelector('.tab.active').dataset.tab;
+            
+            if (activeTab === 'upload') {
+                if (currentSessionId) {
+                    noSessionWarning.style.display = 'none';
+                    uploadContent.style.display = 'block';
+                } else {
+                    noSessionWarning.style.display = 'block';
+                    uploadContent.style.display = 'none';
+                }
+            } else if (activeTab === 'webcam') {
+                if (currentSessionId) {
+                    webcamNoSessionWarning.style.display = 'none';
+                    webcamContent.style.display = 'block';
+                } else {
+                    webcamNoSessionWarning.style.display = 'block';
+                    webcamContent.style.display = 'none';
+                }
+            } else if (activeTab === 'results') {
+                loadSessionResults();
+            }
+        }
+        
+        // Show status message
+        function showStatus(message, type = 'success') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${type}`;
+            statusMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Initialize webcam
+        async function initWebcam() {
+            try {
+                if (stream) {
+                    stopWebcam();
+                }
+                
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true,
+                    audio: false
+                });
+                
+                webcamVideo.srcObject = stream;
+                startWebcamBtn.textContent = 'Stop Camera';
+                captureBtn.disabled = false;
+                autoCaptureBtn.disabled = false;
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                showStatus(`Failed to access webcam: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Stop webcam
+        function stopWebcam() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                webcamVideo.srcObject = null;
+                stream = null;
+            }
+            
+            startWebcamBtn.textContent = 'Start Camera';
+            captureBtn.disabled = true;
+            autoCaptureBtn.disabled = true;
+            stopAutoCaptureIfActive();
+        }
+        
+        // Capture single frame from webcam
+        async function captureWebcamFrame() {
+            if (!stream) {
+                showStatus('Camera not started', 'error');
+                return null;
+            }
+            
+            if (!currentSessionId) {
+                showStatus('No active session', 'error');
+                return null;
+            }
+            
+            try {
+                // Create a canvas element
+                const canvas = document.createElement('canvas');
+                canvas.width = webcamVideo.videoWidth;
+                canvas.height = webcamVideo.videoHeight;
+                
+                // Draw the video frame to the canvas
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
+                
+                // Convert the canvas to a blob
+                const blob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/jpeg');
+                });
+                
+                // Create a File object
+                const file = new File([blob], 'webcam-capture.jpg', { type: 'image/jpeg' });
+                
+                // Upload the file
+                const result = await uploadFrame(file);
+                
+                if (result) {
+                    lastEmotion.textContent = `${result.frame_emotion} ${result.confidence ? `(${Math.round(result.confidence * 100)}%)` : ''}`;
+                    lastEmotion.style.color = EMOTION_COLORS[result.frame_emotion];
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('Error capturing webcam frame:', error);
+                showStatus(`Failed to capture frame: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Start auto-capture
+        function startAutoCapture() {
+            if (!stream) {
+                showStatus('Camera not started', 'error');
+                return;
+            }
+            
+            if (!currentSessionId) {
+                showStatus('No active session', 'error');
+                return;
+            }
+            
+            const intervalSeconds = parseInt(captureIntervalSlider.value);
+            
+            isAutoCaptureActive = true;
+            autoCaptureBtn.disabled = true;
+            stopCaptureBtn.disabled = false;
+            recordingIndicator.classList.add('active');
+            
+            captureWebcamFrame(); // Capture first frame immediately
+            
+            captureInterval = setInterval(() => {
+                captureWebcamFrame();
+            }, intervalSeconds * 1000);
+            
+            showStatus(`Auto capture started (every ${intervalSeconds} seconds)`, 'success');
+        }
+        
+        // Stop auto-capture
+        function stopAutoCaptureIfActive() {
+            if (isAutoCaptureActive) {
+                clearInterval(captureInterval);
+                isAutoCaptureActive = false;
+                autoCaptureBtn.disabled = false;
+                stopCaptureBtn.disabled = true;
+                recordingIndicator.classList.remove('active');
+                showStatus('Auto capture stopped', 'success');
+            }
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isConnected = await checkApiConnection();
+            if (isConnected) {
+                await loadSessions();
+                updateTabContent();
+            }
+            
+            // Set up interval to check API connection
+            setInterval(checkApiConnection, 10000);
+        });
+        
+        refreshSessionsBtn.addEventListener('click', loadSessions);
+        
+        createSessionBtn.addEventListener('click', createSession);
+        createSessionFromWarning.addEventListener('click', createSession);
+        createSessionFromWebcam.addEventListener('click', createSession);
+        
+        imageUpload.addEventListener('change', event => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    uploadImageBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+                uploadImageBtn.disabled = true;
+            }
+        });
+        
+        uploadImageBtn.addEventListener('click', async () => {
+            const file = imageUpload.files[0];
+            if (file) {
+                await uploadFrame(file);
+                imageUpload.value = '';
+                imagePreview.style.display = 'none';
+                uploadImageBtn.disabled = true;
+            }
+        });
+        
+        endSessionBtn.addEventListener('click', endSession);
+        
+        refreshResultsBtn.addEventListener('click', loadSessionResults);
+        
+        clearSessionBtn.addEventListener('click', clearSession);
+        
+        copySessionIdBtn.addEventListener('click', () => {
+            if (currentSessionId) {
+                navigator.clipboard.writeText(currentSessionId);
+                showStatus('Session ID copied to clipboard', 'success');
+            }
+        });
+        
+        startWebcamBtn.addEventListener('click', () => {
+            if (stream) {
+                stopWebcam();
+            } else {
+                initWebcam();
+            }
+        });
+        
+        captureBtn.addEventListener('click', captureWebcamFrame);
+        
+        autoCaptureBtn.addEventListener('click', startAutoCapture);
+        
+        stopCaptureBtn.addEventListener('click', stopAutoCaptureIfActive);
+        
+        captureIntervalSlider.addEventListener('input', event => {
+            intervalValue.textContent = `${event.target.value}s`;
+        });
+    </script>
+</body>
+</html>
