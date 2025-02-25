@@ -23,7 +23,7 @@ EMOTIONS = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
 # Redis Configuration
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))    
 REDIS_DB = int(os.environ.get('REDIS_DB', 0))
 REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', None)
 
@@ -266,7 +266,7 @@ def upload_frame():
         
         # Generate frame ID and timestamp
         frame_id = str(uuid.uuid4())
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()  
         
         # Save image 
         img_path = os.path.join(question_dir, f"{frame_id}.jpg")
@@ -472,14 +472,21 @@ def get_question_results():
     """Get results for a specific question"""
     try:
         question_id = request.args.get('question_id')
+        session_id = request.args.get('session_id')
         
         if not question_id:
             return jsonify({"error": "No question_id provided"}), 400
+        if not session_id:
+            return jsonify({"error": "No session_id provided"}), 400
 
         # Check if question exists
         question = get_question(question_id)
         if not question:
             return jsonify({"error": "Question not found"}), 404
+            
+        # Verify that question belongs to the specified session
+        if question["session_id"] != session_id:
+            return jsonify({"error": "Question does not belong to specified session"}), 400
 
         # Check for stored results first
         stored_results = get_stored_question_results(question_id)
@@ -497,6 +504,8 @@ def get_question_results():
     except Exception as e:
         print(f"Error getting question results: {e}")
         return jsonify({"error": str(e)}), 500
+
+
 
 @app.route('/get_session_results', methods=['GET'])
 def get_session_results():
