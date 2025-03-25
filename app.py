@@ -637,6 +637,51 @@ def clear_session():
         print(f"Error clearing session: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/clear_question', methods=['POST'])
+def clear_question():
+    """Delete a question and all associated data from a session."""
+    try:
+        session_id = request.form.get('session_id')
+        question_id = request.form.get('question_id')
+        
+        if not session_id or not question_id:
+            return jsonify({"error": "session_id and question_id are required"}), 400
+        
+        # Check if session exists
+        session_status = get_session_status(session_id)
+        if not session_status:
+            return jsonify({"error": "Session not found"}), 404
+        
+        # Check if question exists in the session
+        if not redis_client.sismember(f"session:{session_id}:questions", question_id):
+            return jsonify({"error": "Question not found in session"}), 404
+        
+        # Get all frames for this question
+        frame_ids = redis_client.smembers(f"question:{question_id}:frames")
+        
+        # Delete each frame
+        for frame_id in frame_ids:
+            redis_client.delete(f"frame:{frame_id}")
+        
+        # Delete question's frame set
+        redis_client.delete(f"question:{question_id}:frames")
+        
+        # Delete question
+        redis_client.delete(f"question:{question_id}")
+        
+        # Remove question from session's question set
+        redis_client.srem(f"session:{session_id}:questions", question_id)
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"Question {question_id} and all associated data cleared from session {session_id}"
+        })
+    
+    except Exception as e:
+        print(f"Error clearing question: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Simple health check endpoint"""
