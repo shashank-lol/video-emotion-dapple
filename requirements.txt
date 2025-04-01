@@ -10,3 +10,4 @@ ipywidgets==8.1.1
 flask==2.3.3
 flask-cors==4.0.0
 pillow==10.0.1
+redis
